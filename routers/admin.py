@@ -628,7 +628,7 @@ def get_admin_metrics(
     rol = "superadmin"
     id_tenant = None
     if current_user and isinstance(current_user, dict):
-        rol = current_user.get("role") or current_user.get("rol")
+        rol = (current_user.get("role") or current_user.get("rol") or "superadmin").lower()
         id_tenant = current_user.get("id_tenant")
 
     start_date = None
@@ -815,7 +815,7 @@ def get_admin_kpis(
     rol = "superadmin"
     id_tenant = None
     if current_user and isinstance(current_user, dict):
-        rol = current_user.get("role") or current_user.get("rol")
+        rol = (current_user.get("role") or current_user.get("rol") or "superadmin").lower()
         id_tenant = current_user.get("id_tenant")
 
     # Base Queries
