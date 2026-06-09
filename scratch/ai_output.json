@@ -1,0 +1,8 @@
+{
+    "categoria": "⚙️ Mecánica de Motor",
+    "urgencia": "Media",
+    "diagnostico_ia": "El motor del vehículo se detuvo repentinamente durante la marcha, sugiriendo un fallo en el sistema de encendido, alimentación de combustible o sensores principales. Es necesario realizar una lectura de códigos con escáner OBD-II para precisar la causa.\n\nHerramientas sugeridas: Escáner de diagnóstico OBD-II, multímetro digital, juego de llaves y destornilladores, manómetro de presión de combustible, arrancador de batería portátil.",
+    "herramientas_sugeridas": "Escáner de diagnóstico OBD-II, multímetro digital, juego de llaves y destornilladores, manómetro de presión de combustible, arrancador de batería portátil",
+    "diagnostico_cliente": "Lamentamos este inconveniente, por favor mantenga la calma y asegúrese de activar sus luces de emergencia para alertar a otros conductores. Coloque los triángulos de seguridad y permanezca en un lugar seguro mientras nuestro técnico llega a auxiliarle.",
+    "especialidad_requerida": "Mecánico Automotriz de Auxilio Vial"
+}
