@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -1075,14 +1075,12 @@ def get_admin_kpis(
     }
 
 @router.post("/talleres/{id_taller}/aprobar")
-def aprobar_taller(id_taller: int, admin_id: int = None, db: Session = Depends(get_db)):
+def aprobar_taller(id_taller: int, background_tasks: BackgroundTasks, admin_id: int = None, db: Session = Depends(get_db)):
     taller = db.query(models.Taller).filter(models.Taller.id_taller == id_taller).first()
     if not taller:
         raise HTTPException(status_code=404, detail="Taller no encontrado")
     taller.estado_aprobacion = "Aprobado"
     taller.id_admin_aprobador = admin_id
-    from utils import send_approval_email
-    send_approval_email(destinatario=taller.correo, nombre_taller=taller.razon_social)
     
     # Registrar en Bitácora
     log = models.Bitacora(
@@ -1092,8 +1090,11 @@ def aprobar_taller(id_taller: int, admin_id: int = None, db: Session = Depends(g
         descripcion=f"El taller {taller.razon_social} (NIT: {taller.nit}) ha sido aprobado para operar en la plataforma."
     )
     db.add(log)
-    
     db.commit()
+    
+    from utils import send_approval_email
+    background_tasks.add_task(send_approval_email, destinatario=taller.correo, nombre_taller=taller.razon_social)
+    
     return {"message": "Taller aprobado exitosamente."}
 
 @router.post("/talleres/{id_taller}/rechazar")

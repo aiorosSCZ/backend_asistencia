@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.orm import Session
 from database import get_db
 import models, schemas, crud, utils
@@ -8,7 +8,7 @@ import random
 router = APIRouter()
 
 @router.post("/forgot-password")
-def forgot_password(request: schemas.ForgotPasswordRequest, db: Session = Depends(get_db)):
+def forgot_password(request: schemas.ForgotPasswordRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     cliente = db.query(models.Cliente).filter(models.Cliente.correo == request.correo).first()
     taller = db.query(models.Taller).filter(models.Taller.correo == request.correo).first()
     
@@ -26,7 +26,7 @@ def forgot_password(request: schemas.ForgotPasswordRequest, db: Session = Depend
     db.add(db_token)
     db.commit()
 
-    utils.send_reset_password_email(request.correo, token)
+    background_tasks.add_task(utils.send_reset_password_email, request.correo, token)
 
     return {"message": "Código de verificación enviado al correo electrónico"}
 

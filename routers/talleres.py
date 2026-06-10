@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, BackgroundTasks
 from sqlalchemy.orm import Session
 import crud, schemas, schemas_auth, models
 from database import get_db
@@ -253,6 +253,7 @@ def update_horario(
 @router.patch("/{id_taller}/aprobar")
 def aprobar_taller(
     id_taller: int,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: dict = Depends(dependencies.get_current_user)
 ):
@@ -280,12 +281,10 @@ def aprobar_taller(
     db.commit()
     db.refresh(taller)
     
-    # Enviar correo de notificación
-    correo_enviado = send_approval_email(destinatario=taller.correo, nombre_taller=taller.razon_social)
+    # Enviar correo de notificación en segundo plano
+    background_tasks.add_task(send_approval_email, destinatario=taller.correo, nombre_taller=taller.razon_social)
     
-    mensaje = "Taller aprobado exitosamente."
-    if not correo_enviado:
-        mensaje += " (Aviso: Hubo un problema enviando el correo de notificación, pero el taller fue aprobado en base de datos)."
+    mensaje = "Taller aprobado exitosamente. Se ha encolado el correo de notificación."
 
     return {
         "status": "success",
