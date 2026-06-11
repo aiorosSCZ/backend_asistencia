@@ -19,6 +19,8 @@ def send_approval_email(destinatario: str, nombre_taller: str):
     smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
     smtp_port = int(os.getenv("SMTP_PORT", 587))
 
+    print(f"[DEBUG EMAIL] Iniciando envío de aprobación a {destinatario} usando servidor {smtp_server}:{smtp_port}. Usuario: {smtp_user}", flush=True)
+
     msg = EmailMessage()
     msg['Subject'] = '¡Tu Taller ha sido Aprobado! - AsisCar'
     msg['From'] = smtp_user
@@ -57,20 +59,22 @@ def send_approval_email(destinatario: str, nombre_taller: str):
     try:
         if smtp_user and smtp_password and smtp_user != "tu_correo@gmail.com":
             if smtp_port == 465:
+                print(f"[DEBUG EMAIL] Conectando por SMTP_SSL a {smtp_server}:{smtp_port}...", flush=True)
                 with smtplib.SMTP_SSL(smtp_server, smtp_port) as server:
                     server.login(smtp_user, smtp_password)
                     server.send_message(msg)
             else:
+                print(f"[DEBUG EMAIL] Conectando por SMTP standard + STARTTLS a {smtp_server}:{smtp_port}...", flush=True)
                 with smtplib.SMTP(smtp_server, smtp_port) as server:
                     server.starttls()
                     server.login(smtp_user, smtp_password)
                     server.send_message(msg)
-            print(f"Correo de aprobación enviado exitosamente a {destinatario}")
+            print(f"[DEBUG EMAIL] Correo de aprobación enviado exitosamente a {destinatario}", flush=True)
         else:
-            print(f"SIMULACIÓN: Correo de aprobación enviado exitosamente a {destinatario}")
+            print(f"[DEBUG EMAIL] SIMULACIÓN: Correo de aprobación enviado exitosamente a {destinatario}", flush=True)
         return True
     except Exception as e:
-        print(f"Error enviando correo: {e}")
+        print(f"[DEBUG EMAIL] Error enviando correo: {e}", flush=True)
         return False
 
 def send_reset_password_email(destinatario: str, token: str):
@@ -81,6 +85,8 @@ def send_reset_password_email(destinatario: str, token: str):
     smtp_password = os.getenv("SMTP_PASSWORD", "tu_contraseña_de_aplicacion")
     smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
     smtp_port = int(os.getenv("SMTP_PORT", 587))
+
+    print(f"[DEBUG EMAIL] Iniciando envío de recuperación a {destinatario} usando servidor {smtp_server}:{smtp_port}. Usuario: {smtp_user}", flush=True)
 
     msg = EmailMessage()
     msg['Subject'] = 'Código de Recuperación de Contraseña - AsisCar'
@@ -116,20 +122,22 @@ def send_reset_password_email(destinatario: str, token: str):
     try:
         if smtp_user and smtp_password and smtp_user != "tu_correo@gmail.com":
             if smtp_port == 465:
+                print(f"[DEBUG EMAIL] Conectando por SMTP_SSL a {smtp_server}:{smtp_port}...", flush=True)
                 with smtplib.SMTP_SSL(smtp_server, smtp_port) as server:
                     server.login(smtp_user, smtp_password)
                     server.send_message(msg)
             else:
+                print(f"[DEBUG EMAIL] Conectando por SMTP standard + STARTTLS a {smtp_server}:{smtp_port}...", flush=True)
                 with smtplib.SMTP(smtp_server, smtp_port) as server:
                     server.starttls()
                     server.login(smtp_user, smtp_password)
                     server.send_message(msg)
-            print(f"Correo de recuperación enviado exitosamente a {destinatario}")
+            print(f"[DEBUG EMAIL] Correo de recuperación enviado exitosamente a {destinatario}", flush=True)
         else:
-            print(f"SIMULACIÓN: Correo de recuperación enviado a {destinatario}. Token: {token}")
+            print(f"[DEBUG EMAIL] SIMULACIÓN: Correo de recuperación enviado a {destinatario}. Token: {token}", flush=True)
         return True
     except Exception as e:
-        print(f"Error enviando correo de recuperación: {e}")
+        print(f"[DEBUG EMAIL] Error enviando correo de recuperación: {e}", flush=True)
         return False
 
 
