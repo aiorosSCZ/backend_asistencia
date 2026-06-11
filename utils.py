@@ -56,11 +56,16 @@ def send_approval_email(destinatario: str, nombre_taller: str):
 
     try:
         if smtp_user and smtp_password and smtp_user != "tu_correo@gmail.com":
-            with smtplib.SMTP(smtp_server, smtp_port) as server:
-                server.starttls()
-                server.login(smtp_user, smtp_password)
-                server.send_message(msg)
-                print(f"Correo de aprobación enviado exitosamente a {destinatario}")
+            if smtp_port == 465:
+                with smtplib.SMTP_SSL(smtp_server, smtp_port) as server:
+                    server.login(smtp_user, smtp_password)
+                    server.send_message(msg)
+            else:
+                with smtplib.SMTP(smtp_server, smtp_port) as server:
+                    server.starttls()
+                    server.login(smtp_user, smtp_password)
+                    server.send_message(msg)
+            print(f"Correo de aprobación enviado exitosamente a {destinatario}")
         else:
             print(f"SIMULACIÓN: Correo de aprobación enviado exitosamente a {destinatario}")
         return True
@@ -110,11 +115,16 @@ def send_reset_password_email(destinatario: str, token: str):
 
     try:
         if smtp_user and smtp_password and smtp_user != "tu_correo@gmail.com":
-            with smtplib.SMTP(smtp_server, smtp_port) as server:
-                server.starttls()
-                server.login(smtp_user, smtp_password)
-                server.send_message(msg)
-                print(f"Correo de recuperación enviado exitosamente a {destinatario}")
+            if smtp_port == 465:
+                with smtplib.SMTP_SSL(smtp_server, smtp_port) as server:
+                    server.login(smtp_user, smtp_password)
+                    server.send_message(msg)
+            else:
+                with smtplib.SMTP(smtp_server, smtp_port) as server:
+                    server.starttls()
+                    server.login(smtp_user, smtp_password)
+                    server.send_message(msg)
+            print(f"Correo de recuperación enviado exitosamente a {destinatario}")
         else:
             print(f"SIMULACIÓN: Correo de recuperación enviado a {destinatario}. Token: {token}")
         return True
