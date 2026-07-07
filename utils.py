@@ -1,6 +1,8 @@
 import smtplib
 from email.message import EmailMessage
 import os
+import json
+import urllib.request
 from typing import Optional
 
 # Configuración de credenciales SMTP (Ejemplo usando Gmail)
@@ -10,22 +12,51 @@ SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
 SMTP_USER = os.getenv("SMTP_USER", "tu_correo@gmail.com") 
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "tu_contraseña_de_aplicacion")
 
+def send_email_via_brevo(destinatario: str, subject: str, html_content: str, text_content: str = None) -> bool:
+    """
+    Envía un correo electrónico utilizando la API REST de Brevo (HTTP).
+    """
+    api_key = os.getenv("BREVO_API_KEY")
+    if not api_key:
+        print("[DEBUG EMAIL] Brevo API Key no configurada.", flush=True)
+        return False
+        
+    sender_email = os.getenv("SMTP_USER", "asiscar.asistente@gmail.com")
+    url = "https://api.brevo.com/v3/smtp/email"
+    headers = {
+        "accept": "application/json",
+        "api-key": api_key,
+        "content-type": "application/json"
+    }
+    
+    payload = {
+        "sender": {"name": "AsisCar", "email": sender_email},
+        "to": [{"email": destinatario}],
+        "subject": subject,
+        "htmlContent": html_content
+    }
+    if text_content:
+        payload["textContent"] = text_content
+        
+    try:
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers=headers,
+            method="POST"
+        )
+        with urllib.request.urlopen(req) as response:
+            res_body = response.read().decode("utf-8")
+            print(f"[DEBUG EMAIL] Correo enviado exitosamente a {destinatario} vía Brevo API. Respuesta: {res_body}", flush=True)
+            return True
+    except Exception as e:
+        print(f"[DEBUG EMAIL] Error enviando correo vía Brevo API: {e}", flush=True)
+        return False
+
 def send_approval_email(destinatario: str, nombre_taller: str):
     """
     Envía un correo electrónico al taller notificando que su cuenta ha sido aprobada.
     """
-    smtp_user = os.getenv("SMTP_USER", "tu_correo@gmail.com")
-    smtp_password = os.getenv("SMTP_PASSWORD", "tu_contraseña_de_aplicacion")
-    smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
-    smtp_port = int(os.getenv("SMTP_PORT", 587))
-
-    print(f"[DEBUG EMAIL] Iniciando envío de aprobación a {destinatario} usando servidor {smtp_server}:{smtp_port}. Usuario: {smtp_user}", flush=True)
-
-    msg = EmailMessage()
-    msg['Subject'] = '¡Tu Taller ha sido Aprobado! - AsisCar'
-    msg['From'] = smtp_user
-    msg['To'] = destinatario
-
     html_content = f"""
     <html>
         <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
@@ -53,7 +84,29 @@ def send_approval_email(destinatario: str, nombre_taller: str):
         </body>
     </html>
     """
-    msg.set_content("Tu taller ha sido aprobado. Inicia sesión para acceder al dashboard.")
+    text_content = "Tu taller ha sido aprobado. Inicia sesión para acceder al dashboard."
+
+    # Intentar Brevo primero
+    if os.getenv("BREVO_API_KEY"):
+        print(f"[DEBUG EMAIL] Intentando enviar aprobación a {destinatario} vía Brevo API...", flush=True)
+        success = send_email_via_brevo(destinatario, '¡Tu Taller ha sido Aprobado! - AsisCar', html_content, text_content)
+        if success:
+            return True
+        print("[DEBUG EMAIL] Brevo API falló, reintentando con SMTP...", flush=True)
+
+    # Fallback SMTP
+    smtp_user = os.getenv("SMTP_USER", "tu_correo@gmail.com")
+    smtp_password = os.getenv("SMTP_PASSWORD", "tu_contraseña_de_aplicacion")
+    smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+    smtp_port = int(os.getenv("SMTP_PORT", 587))
+
+    print(f"[DEBUG EMAIL] Iniciando envío de aprobación SMTP a {destinatario} usando servidor {smtp_server}:{smtp_port}. Usuario: {smtp_user}", flush=True)
+
+    msg = EmailMessage()
+    msg['Subject'] = '¡Tu Taller ha sido Aprobado! - AsisCar'
+    msg['From'] = smtp_user
+    msg['To'] = destinatario
+    msg.set_content(text_content)
     msg.add_alternative(html_content, subtype='html')
 
     try:
@@ -69,7 +122,7 @@ def send_approval_email(destinatario: str, nombre_taller: str):
                     server.starttls()
                     server.login(smtp_user, smtp_password)
                     server.send_message(msg)
-            print(f"[DEBUG EMAIL] Correo de aprobación enviado exitosamente a {destinatario}", flush=True)
+            print(f"[DEBUG EMAIL] Correo de aprobación enviado exitosamente a {destinatario} (SMTP)", flush=True)
         else:
             print(f"[DEBUG EMAIL] SIMULACIÓN: Correo de aprobación enviado exitosamente a {destinatario}", flush=True)
         return True
@@ -81,18 +134,6 @@ def send_reset_password_email(destinatario: str, token: str):
     """
     Envía un correo electrónico con el código de verificación para restablecer la contraseña.
     """
-    smtp_user = os.getenv("SMTP_USER", "tu_correo@gmail.com")
-    smtp_password = os.getenv("SMTP_PASSWORD", "tu_contraseña_de_aplicacion")
-    smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
-    smtp_port = int(os.getenv("SMTP_PORT", 587))
-
-    print(f"[DEBUG EMAIL] Iniciando envío de recuperación a {destinatario} usando servidor {smtp_server}:{smtp_port}. Usuario: {smtp_user}", flush=True)
-
-    msg = EmailMessage()
-    msg['Subject'] = 'Código de Recuperación de Contraseña - AsisCar'
-    msg['From'] = smtp_user
-    msg['To'] = destinatario
-
     html_content = f"""
     <html>
         <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
@@ -116,7 +157,29 @@ def send_reset_password_email(destinatario: str, token: str):
         </body>
     </html>
     """
-    msg.set_content(f"Tu código de recuperación es: {token}")
+    text_content = f"Tu código de recuperación es: {token}"
+
+    # Intentar Brevo primero
+    if os.getenv("BREVO_API_KEY"):
+        print(f"[DEBUG EMAIL] Intentando enviar recuperación a {destinatario} vía Brevo API...", flush=True)
+        success = send_email_via_brevo(destinatario, 'Código de Recuperación de Contraseña - AsisCar', html_content, text_content)
+        if success:
+            return True
+        print("[DEBUG EMAIL] Brevo API falló, reintentando con SMTP...", flush=True)
+
+    # Fallback SMTP
+    smtp_user = os.getenv("SMTP_USER", "tu_correo@gmail.com")
+    smtp_password = os.getenv("SMTP_PASSWORD", "tu_contraseña_de_aplicacion")
+    smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+    smtp_port = int(os.getenv("SMTP_PORT", 587))
+
+    print(f"[DEBUG EMAIL] Iniciando envío de recuperación SMTP a {destinatario} usando servidor {smtp_server}:{smtp_port}. Usuario: {smtp_user}", flush=True)
+
+    msg = EmailMessage()
+    msg['Subject'] = 'Código de Recuperación de Contraseña - AsisCar'
+    msg['From'] = smtp_user
+    msg['To'] = destinatario
+    msg.set_content(text_content)
     msg.add_alternative(html_content, subtype='html')
 
     try:
@@ -132,13 +195,14 @@ def send_reset_password_email(destinatario: str, token: str):
                     server.starttls()
                     server.login(smtp_user, smtp_password)
                     server.send_message(msg)
-            print(f"[DEBUG EMAIL] Correo de recuperación enviado exitosamente a {destinatario}", flush=True)
+            print(f"[DEBUG EMAIL] Correo de recuperación enviado exitosamente a {destinatario} (SMTP)", flush=True)
         else:
             print(f"[DEBUG EMAIL] SIMULACIÓN: Correo de recuperación enviado a {destinatario}. Token: {token}", flush=True)
         return True
     except Exception as e:
         print(f"[DEBUG EMAIL] Error enviando correo de recuperación: {e}", flush=True)
         return False
+
 
 
 # --- JWT HELPER FUNCTIONS ---
